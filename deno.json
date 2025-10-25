@@ -6,5 +6,8 @@
     "compilerOptions": {
         "lib": ["deno.ns", "dom", "deno.unstable"],
         "strict": true
+    },
+    "tasks": {
+        "concepts": "deno run -A server.ts"
     }
 }
