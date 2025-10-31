@@ -27,6 +27,16 @@ export class AnchoredContextService {
     const res = await this.anchors().deleteOne({ _id: new ObjectId(anchorId) });
     if (res.deletedCount === 0) throw new Error("Anchor not found");
   }
+
+  async listByPaper(paperId: string): Promise<Array<{
+    _id: string; kind: AnchorKind; ref: string; snippet: string;
+  }>> {
+    const cur = this.anchors().find({ paperId }).sort({ createdAt: 1 });
+    const items = await cur.toArray();
+    return items.map((a) => ({
+      _id: String(a._id), kind: a.kind, ref: a.ref, snippet: a.snippet,
+    }));
+  }
 }
 
 

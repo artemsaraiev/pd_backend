@@ -51,5 +51,10 @@ export class IdentityVerificationService {
     const res = await this.verifications().updateOne({ _id: userId }, { $pull: { badges: badge } });
     if (res.matchedCount === 0) return; // no-op if missing
   }
+
+  async get(userId: string): Promise<VerificationDoc | null> {
+    const doc = await this.verifications().findOne({ _id: userId });
+    return doc ?? null;
+  }
 }
 

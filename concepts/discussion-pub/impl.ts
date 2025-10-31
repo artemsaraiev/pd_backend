@@ -71,6 +71,35 @@ export class DiscussionPubService {
     const del = await this.replies().deleteOne({ _id: new ObjectId(replyId) });
     if (del.deletedCount === 0) throw new Error("Reply not found");
   }
+
+  async getPubIdByPaper(paperId: string): Promise<string | null> {
+    const doc = await this.pubs().findOne({ paperId });
+    return doc?._id ? String(doc._id) : null;
+  }
+
+  async listThreads(pubId: string, anchorId?: string): Promise<Array<{
+    _id: string; author: string; body: string; anchorId?: string; createdAt: number; editedAt?: number;
+  }>> {
+    const filter: Record<string, unknown> = { pubId };
+    if (anchorId) filter.anchorId = anchorId;
+    const cur = this.threads().find(filter).sort({ createdAt: 1 });
+    const items = await cur.toArray();
+    return items.map((t) => ({
+      _id: String(t._id), author: t.author, body: t.body,
+      anchorId: t.anchorId, createdAt: t.createdAt, editedAt: t.editedAt,
+    }));
+  }
+
+  async listReplies(threadId: string): Promise<Array<{
+    _id: string; author: string; body: string; createdAt: number; editedAt?: number;
+  }>> {
+    const cur = this.replies().find({ threadId }).sort({ createdAt: 1 });
+    const items = await cur.toArray();
+    return items.map((r) => ({
+      _id: String(r._id), author: r.author, body: r.body,
+      createdAt: r.createdAt, editedAt: r.editedAt,
+    }));
+  }
 }
 
 

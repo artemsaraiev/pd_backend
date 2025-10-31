@@ -8,6 +8,7 @@ export interface PaperDoc {
   title?: string;
   authors: UserId[];
   links: string[];
+  createdAt?: number;
 }
 
 export class PaperIndexService {
@@ -26,6 +27,7 @@ export class PaperIndexService {
       _id: id,
       authors: [],
       links: [],
+      createdAt: Date.now(),
     };
     if (title !== undefined) setOnInsert.title = title;
     await this.papers().updateOne(
@@ -73,6 +75,15 @@ export class PaperIndexService {
       { $pull: { links: url } },
     );
     if (res.matchedCount === 0) throw new Error("Paper not found");
+  }
+
+  async get(id: string): Promise<PaperDoc | null> {
+    return await this.papers().findOne({ _id: id });
+  }
+
+  async listRecent(limit = 20): Promise<Array<{ _id: string; title?: string; createdAt?: number }>> {
+    const cur = this.papers().find({}, { projection: { _id: 1, title: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(limit);
+    return await cur.toArray();
   }
 }
 

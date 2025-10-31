@@ -50,6 +50,17 @@ const routes: Record<string, Handler> = {
     const result = await paperIndex.ensure(id, title);
     return json({ result });
   },
+  "POST /api/PaperIndex/get": async (req) => {
+    const body = await req.json();
+    const result = await paperIndex.get(String(body.id));
+    return json({ result });
+  },
+  "POST /api/PaperIndex/listRecent": async (req) => {
+    const body = await req.json().catch(() => ({}));
+    const limit = typeof body.limit === "number" ? Math.max(1, Math.min(100, body.limit)) : 20;
+    const result = await paperIndex.listRecent(limit);
+    return json({ result });
+  },
   "POST /api/PaperIndex/updateMeta": async (req) => {
     const body = await req.json();
     await paperIndex.updateMeta(String(body.id), body.title as string | undefined);
@@ -82,6 +93,11 @@ const routes: Record<string, Handler> = {
     const result = await anchors.create(String(body.paperId), body.kind, String(body.ref), String(body.snippet));
     return json({ result });
   },
+  "POST /api/AnchoredContext/listByPaper": async (req) => {
+    const body = await req.json();
+    const result = await anchors.listByPaper(String(body.paperId));
+    return json({ result });
+  },
   "POST /api/AnchoredContext/edit": async (req) => {
     const body = await req.json();
     await anchors.edit(String(body.anchorId), body.ref as (string|undefined), body.snippet as (string|undefined));
@@ -99,14 +115,29 @@ const routes: Record<string, Handler> = {
     const result = await discuss.open(String(body.paperId));
     return json({ result });
   },
+  "POST /api/DiscussionPub/getPubIdByPaper": async (req) => {
+    const body = await req.json();
+    const result = await discuss.getPubIdByPaper(String(body.paperId));
+    return json({ result });
+  },
   "POST /api/DiscussionPub/startThread": async (req) => {
     const body = await req.json();
     const result = await discuss.startThread(String(body.pubId), String(body.author), String(body.body), body.anchorId as (string|undefined));
     return json({ result });
   },
+  "POST /api/DiscussionPub/listThreads": async (req) => {
+    const body = await req.json();
+    const result = await discuss.listThreads(String(body.pubId), body.anchorId as (string|undefined));
+    return json({ result });
+  },
   "POST /api/DiscussionPub/reply": async (req) => {
     const body = await req.json();
     const result = await discuss.reply(String(body.threadId), String(body.author), String(body.body));
+    return json({ result });
+  },
+  "POST /api/DiscussionPub/listReplies": async (req) => {
+    const body = await req.json();
+    const result = await discuss.listReplies(String(body.threadId));
     return json({ result });
   },
   "POST /api/DiscussionPub/editThread": async (req) => {
@@ -135,6 +166,11 @@ const routes: Record<string, Handler> = {
     const body = await req.json();
     await (new IdentityVerificationService(db)).addORCID(String(body.userId), String(body.orcid));
     return json({ ok: true });
+  },
+  "POST /api/IdentityVerification/get": async (req) => {
+    const body = await req.json();
+    const result = await (new IdentityVerificationService(db)).get(String(body.userId));
+    return json({ result });
   },
   "POST /api/IdentityVerification/addAffiliation": async (req) => {
     const body = await req.json();

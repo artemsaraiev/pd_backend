@@ -26,3 +26,14 @@ I also tightened typing and error behavior: all actions take only ids/primitives
 
 See concept folders for specs, implementations, tests, and `test-output.md` captures alongside each test.
 
+
+### A4b backend updates to support frontend lists (Oct 28)
+- Added read/list queries so the frontend can render without refreshes:
+  - `PaperIndex.get(id)` returns the paper doc (id/title).
+  - `AnchoredContext.listByPaper(paperId)` returns anchors for a paper.
+  - `DiscussionPub.getPubIdByPaper(paperId)` resolves pub id if opened.
+  - `DiscussionPub.listThreads(pubId, anchorId?)` returns threads with timestamps.
+  - `DiscussionPub.listReplies(threadId)` returns replies with timestamps.
+  - `IdentityVerification.get(userId)` fetches the verification record.
+- Exposed routes in `server.ts` under `/api/*` for the above queries, following the existing `{ result: ... }` convention and CORS settings.
+- No breaking changes to action surfaces; list/get are additive. This keeps tests valid while enabling FE browsing flows and a narrated demo.
