@@ -27,6 +27,7 @@ Additional changes (latest):
 - Search:
   - `PaperIndex.searchArxiv` added (regex XML parsing, no DOMParser).
   - Exposed `/api/PaperIndex/searchArxiv` as an included public route.
+  - Frontend now uses this endpoint to render a proper results page (`/search`) instead of auto-selecting the first result; no backend changes needed.
 - Ensure flow:
   - Adjusted ensure sync to match `{ id }` (id-only) so requests without `title` don’t time out.
 
