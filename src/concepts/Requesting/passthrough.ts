@@ -25,12 +25,38 @@
  */
 
 export const inclusions: Record<string, string> = {
-  // Feel free to delete these example inclusions
-  "/api/LikertSurvey/_getSurveyQuestions": "this is a public query",
-  "/api/LikertSurvey/_getSurveyResponses": "responses are public",
-  "/api/LikertSurvey/_getRespondentAnswers": "answers are visible",
+  // LikertSurvey demo routes
+  "/api/LikertSurvey/_getSurveyQuestions": "public query",
+  "/api/LikertSurvey/_getSurveyResponses": "public query",
+  "/api/LikertSurvey/_getRespondentAnswers": "public query",
   "/api/LikertSurvey/submitResponse": "allow anyone to submit response",
   "/api/LikertSurvey/updateResponse": "allow anyone to update their response",
+
+  // PaperIndex: pass-through for simple mutations that currently don't need orchestration/auth
+  "/api/PaperIndex/addAuthors": "simple mutation; no orchestration",
+  "/api/PaperIndex/removeAuthors": "simple mutation; no orchestration",
+  "/api/PaperIndex/addLink": "simple mutation; no orchestration",
+  "/api/PaperIndex/removeLink": "simple mutation; no orchestration",
+
+  // AnchoredContext
+  "/api/AnchoredContext/edit": "simple edit; currently no auth in syncs",
+  "/api/AnchoredContext/delete": "simple delete; currently no auth in syncs",
+
+  // DiscussionPub: editorial mutations currently left as passthrough
+  "/api/DiscussionPub/editThread": "editorial action; currently no auth in syncs",
+  "/api/DiscussionPub/deleteThread": "editorial action; currently no auth in syncs",
+  "/api/DiscussionPub/editReply": "editorial action; currently no auth in syncs",
+  "/api/DiscussionPub/deleteReply": "editorial action; currently no auth in syncs",
+
+  // IdentityVerification: ancillary operations not yet synced
+  "/api/IdentityVerification/addAffiliation": "user self-update; no orchestration",
+  "/api/IdentityVerification/updateAffiliation": "user self-update; no orchestration",
+  "/api/IdentityVerification/revokeBadge": "admin-like action; currently passthrough",
+
+  // Remove direct Session endpoints; handled via exclusions and syncs
+
+  // Public queries
+  "/api/PaperIndex/searchArxiv": "public search query",
 };
 
 /**
@@ -44,7 +70,36 @@ export const inclusions: Record<string, string> = {
  */
 
 export const exclusions: Array<string> = [
-  // Feel free to delete these example exclusions
-  "/api/LikertSurvey/createSurvey",
-  "/api/LikertSurvey/addQuestion",
+  // Drive these via Requesting + syncs (see backend/src/syncs/a4.sync.ts)
+
+  // PaperIndex
+  "/api/PaperIndex/ensure",
+  "/api/PaperIndex/updateMeta",
+  "/api/PaperIndex/get",
+  "/api/PaperIndex/listRecent",
+
+  // AnchoredContext
+  "/api/AnchoredContext/create",
+  "/api/AnchoredContext/listByPaper",
+
+  // DiscussionPub
+  "/api/DiscussionPub/open",
+  "/api/DiscussionPub/startThread",
+  "/api/DiscussionPub/reply",
+  "/api/DiscussionPub/getPubIdByPaper",
+  "/api/DiscussionPub/listThreads",
+  "/api/DiscussionPub/listReplies",
+
+  // IdentityVerification
+  "/api/IdentityVerification/addORCID",
+  "/api/IdentityVerification/addBadge",
+  "/api/IdentityVerification/get",
+
+  // Auth flows - handled via syncs
+  "/api/UserAuthentication/register",
+  "/api/login",
+  "/api/logout",
+  // Internal auth queries should not be public
+  "/api/UserAuthentication/_getUserByUsername",
+  "/api/UserAuthentication/_getUsername",
 ];

@@ -199,6 +199,12 @@ export function startRequestingServer(
     }),
   );
 
+  // Simple health endpoint so frontends can probe connectivity
+  const healthRoute = `${REQUESTING_BASE_URL}/health`;
+  app.post(healthRoute, (c) => {
+    return c.json({ ok: true });
+  });
+
   /**
    * PASSTHROUGH ROUTES
    *
