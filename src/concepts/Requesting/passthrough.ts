@@ -89,6 +89,8 @@ export const exclusions: Array<string> = [
   "/api/DiscussionPub/getPubIdByPaper",
   "/api/DiscussionPub/listThreads",
   "/api/DiscussionPub/listReplies",
+  // Route replies-tree via Requesting so it’s consistent with listThreads/listReplies
+  "/api/DiscussionPub/listRepliesTree",
 
   // IdentityVerification
   "/api/IdentityVerification/addORCID",

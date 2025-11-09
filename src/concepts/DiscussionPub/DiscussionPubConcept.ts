@@ -26,6 +26,7 @@ export default class DiscussionPubConcept {
   private get replies(): Collection<{
     _id: ObjectId;
     threadId: string;
+    parentId?: string;
     author: string;
     body: string;
     createdAt: number;
@@ -39,6 +40,7 @@ export default class DiscussionPubConcept {
       await this.pubs.createIndex({ paperId: 1 }, { unique: true });
       await this.threads.createIndex({ pubId: 1 });
       await this.replies.createIndex({ threadId: 1 });
+      await this.replies.createIndex({ parentId: 1 });
     } catch {
       // best-effort
     }
@@ -95,6 +97,31 @@ export default class DiscussionPubConcept {
       const now = Date.now();
       const res = await this.replies.insertOne({
         threadId,
+        author,
+        body,
+        createdAt: now,
+      } as unknown as { _id: ObjectId });
+      return { result: String(res.insertedId) };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  async replyTo(
+    { threadId, parentId, author, body }: { threadId: string; parentId?: string; author: string; body: string },
+  ): Promise<{ result: string } | { error: string }> {
+    try {
+      const th = await this.threads.findOne({ _id: new ObjectId(threadId) }).catch(() => null);
+      if (!th) throw new Error("Thread not found");
+      if (parentId) {
+        const parent = await this.replies.findOne({ _id: new ObjectId(parentId) }).catch(() => null);
+        if (!parent) throw new Error("Parent reply not found");
+        if (String(parent.threadId) !== String(threadId)) throw new Error("Parent/thread mismatch");
+      }
+      const now = Date.now();
+      const res = await this.replies.insertOne({
+        threadId,
+        parentId,
         author,
         body,
         createdAt: now,
@@ -229,6 +256,39 @@ export default class DiscussionPubConcept {
           editedAt?: number;
         }>,
       };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  async listRepliesTree(
+    { threadId }: { threadId: string },
+  ): Promise<{ result: Array<any> } | { error: string }> {
+    try {
+      const cur = this.replies.find({ threadId }).sort({ createdAt: 1 });
+      const items = await cur.toArray();
+      // Build id->node
+      const nodeById: Record<string, any> = {};
+      for (const r of items) {
+        nodeById[String(r._id)] = {
+          _id: String(r._id),
+          author: r.author,
+          body: r.body,
+          createdAt: r.createdAt,
+          editedAt: r.editedAt,
+          parentId: r.parentId ? String(r.parentId) : undefined,
+          children: [] as any[],
+        };
+      }
+      const roots: any[] = [];
+      for (const n of Object.values(nodeById)) {
+        if (n.parentId && nodeById[n.parentId]) {
+          nodeById[n.parentId].children.push(n);
+        } else {
+          roots.push(n);
+        }
+      }
+      return { result: roots };
     } catch (e) {
       return { error: e instanceof Error ? e.message : String(e) };
     }

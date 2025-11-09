@@ -31,6 +31,30 @@ Additional changes (latest):
 - Ensure flow:
   - Adjusted ensure sync to match `{ id }` (id-only) so requests without `title` don’t time out.
 
+PDF & discussion updates (new):
+- PDF proxy
+  - Added CORS- and Range-friendly proxy endpoint to the Requesting server:
+    - `GET /api/pdf/:id` in `backend/src/concepts/Requesting/RequestingConcept.ts`.
+    - Streams `https://arxiv.org/pdf/:id.pdf` with exposed `Accept-Ranges`, `Content-Range`, and `Content-Length` headers.
+  - Purpose: allow `pdf.js` in the frontend to fetch PDFs without cross-origin failures and with range requests.
+- DiscussionPub nesting
+  - `backend/src/concepts/DiscussionPub/DiscussionPubConcept.ts`:
+    - Replies schema extended with optional `parentId`.
+    - New actions:
+      - `replyTo({ threadId, parentId?, author, body }) -> ReplyId`
+      - `listRepliesTree({ threadId }) -> nested reply tree`
+    - Indexes: added `{ parentId: 1 }` alongside `{ threadId: 1 }`.
+  - No cross-concept references added; `anchorId` continues to live only on threads (anchors on replies can be modeled later if needed).
+
+Reddit-style collapsible replies (latest):
+- Backend support:
+  - `DiscussionPubConcept.listRepliesTree` already implemented and working correctly.
+  - Syncs in `backend/src/syncs/a4.sync.ts` properly route `listRepliesTree` requests through Requesting.
+  - No backend changes required for this feature.
+- Build verification:
+  - Backend build passes (`deno task build`).
+  - All concept and sync imports regenerate correctly.
+
 Next steps:
 - Verify via `deno task import` then `deno task start`, click through UI and watch backend logs.
 - When verified, delete `backend/concepts/*` and the old `server.ts`.

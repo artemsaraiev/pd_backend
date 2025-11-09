@@ -97,13 +97,15 @@ export const DiscussionOpenResponse: Sync = ({ request, result }) => ({
 
 export const DiscussionStartThreadRequest: Sync = ({ request, pubId, author, body, anchorId }) => ({
   when: actions([Requesting.request, { path: "/DiscussionPub/startThread", pubId, author, body, anchorId }, { request }]),
+  where: () => anchorId !== undefined,
   then: actions([DiscussionPub.startThread, { pubId, author, body, anchorId }]),
 });
 
 // Generic startThread: match both with or without extra fields (e.g., session)
 // Keep a single definition to avoid duplicate firings.
-export const DiscussionStartThreadGenericRequest: Sync = ({ request, pubId, author, body }) => ({
+export const DiscussionStartThreadGenericRequest: Sync = ({ request, pubId, author, body, anchorId }) => ({
   when: actions([Requesting.request, { path: "/DiscussionPub/startThread", pubId, author, body }, { request }]),
+  where: () => anchorId === undefined,
   then: actions([DiscussionPub.startThread, { pubId, author, body }]),
 });
 
@@ -125,6 +127,20 @@ export const DiscussionReplyResponse: Sync = ({ request, result }) => ({
   when: actions(
     [Requesting.request, { path: "/DiscussionPub/reply" }, { request }],
     [DiscussionPub.reply, {}, { result }],
+  ),
+  then: actions([Requesting.respond, { request, result }]),
+});
+
+// Support nested replies with optional parentId
+export const DiscussionReplyToRequest: Sync = ({ request, threadId, parentId, author, body }) => ({
+  when: actions([Requesting.request, { path: "/DiscussionPub/replyTo", threadId, parentId, author, body }, { request }]),
+  then: actions([DiscussionPub.replyTo, { threadId, parentId, author, body }]),
+});
+
+export const DiscussionReplyToResponse: Sync = ({ request, result }) => ({
+  when: actions(
+    [Requesting.request, { path: "/DiscussionPub/replyTo" }, { request }],
+    [DiscussionPub.replyTo, {}, { result }],
   ),
   then: actions([Requesting.respond, { request, result }]),
 });
@@ -170,6 +186,20 @@ export const DiscussionListRepliesResponse: Sync = ({ request, result }) => ({
   when: actions(
     [Requesting.request, { path: "/DiscussionPub/listReplies" }, { request }],
     [DiscussionPub.listReplies, {}, { result }],
+  ),
+  then: actions([Requesting.respond, { request, result }]),
+});
+
+// Tree-structured replies
+export const DiscussionListRepliesTreeRequest: Sync = ({ request, threadId }) => ({
+  when: actions([Requesting.request, { path: "/DiscussionPub/listRepliesTree", threadId }, { request }]),
+  then: actions([DiscussionPub.listRepliesTree, { threadId }]),
+});
+
+export const DiscussionListRepliesTreeResponse: Sync = ({ request, result }) => ({
+  when: actions(
+    [Requesting.request, { path: "/DiscussionPub/listRepliesTree" }, { request }],
+    [DiscussionPub.listRepliesTree, {}, { result }],
   ),
   then: actions([Requesting.respond, { request, result }]),
 });
