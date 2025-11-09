@@ -26,6 +26,60 @@ async function main() {
 
   app.get("/", (c) => c.text("Concept Server is running."));
 
+  // PDF proxy to avoid CORS/Range issues when fetching from arXiv
+  app.options(`${BASE_URL}/pdf/:id`, (c) => {
+    return c.text("", 204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Range",
+      "Access-Control-Expose-Headers": "Accept-Ranges, Content-Length, Content-Range",
+      "Vary": "Origin",
+    });
+  });
+  app.get(`${BASE_URL}/pdf/:id`, async (c) => {
+    const id = c.req.param("id");
+    try {
+      const upstream = await fetch(`https://arxiv.org/pdf/${encodeURIComponent(id)}.pdf`, {
+        redirect: "follow",
+        headers: { "User-Agent": "ConceptBox/0.1" },
+      });
+      if (!upstream.ok || !upstream.body) {
+        return c.text(`Upstream error (${upstream.status})`, upstream.status, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Range",
+          "Access-Control-Expose-Headers": "Accept-Ranges, Content-Length, Content-Range",
+          "Vary": "Origin",
+        });
+      }
+      const acceptRanges = upstream.headers.get("accept-ranges") ?? "bytes";
+      const contentLength = upstream.headers.get("content-length") ?? undefined;
+      const contentRange = upstream.headers.get("content-range") ?? undefined;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/pdf",
+        "Cache-Control": "public, max-age=86400",
+        "Accept-Ranges": acceptRanges,
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Range",
+        "Access-Control-Expose-Headers": "Accept-Ranges, Content-Length, Content-Range",
+        "Vary": "Origin",
+      };
+      if (contentLength) headers["Content-Length"] = contentLength;
+      if (contentRange) headers["Content-Range"] = contentRange;
+      return new Response(upstream.body, { status: upstream.status, headers });
+    } catch (e) {
+      console.error("PDF proxy error:", e);
+      return c.text("Failed to fetch PDF", 502, {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Range",
+        "Access-Control-Expose-Headers": "Accept-Ranges, Content-Length, Content-Range",
+        "Vary": "Origin",
+      });
+    }
+  });
+
   // --- Dynamic Concept Loading and Routing ---
   console.log(`Scanning for concepts in ./${CONCEPTS_DIR}...`);
 

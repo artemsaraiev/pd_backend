@@ -196,6 +196,8 @@ export function startRequestingServer(
     "/*",
     cors({
       origin: REQUESTING_ALLOWED_DOMAIN,
+      allowHeaders: ["Content-Type", "Range"],
+      exposeHeaders: ["Accept-Ranges", "Content-Length", "Content-Range"],
     }),
   );
 
@@ -203,6 +205,68 @@ export function startRequestingServer(
   const healthRoute = `${REQUESTING_BASE_URL}/health`;
   app.post(healthRoute, (c) => {
     return c.json({ ok: true });
+  });
+
+  // PDF proxy (GET) to support pdf.js range requests with CORS from the frontend
+  const pdfRoute = `${REQUESTING_BASE_URL}/pdf/:id`;
+  app.options(pdfRoute, (c) => {
+    return c.text("", 204, {
+      "Access-Control-Allow-Origin": REQUESTING_ALLOWED_DOMAIN,
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Range",
+      "Access-Control-Expose-Headers":
+        "Accept-Ranges, Content-Length, Content-Range",
+      "Vary": "Origin",
+    });
+  });
+  app.get(pdfRoute, async (c) => {
+    const id = c.req.param("id");
+    try {
+      const upstream = await fetch(
+        `https://arxiv.org/pdf/${encodeURIComponent(id)}.pdf`,
+        {
+          redirect: "follow",
+          headers: { "User-Agent": "ConceptBox/0.1" },
+        },
+      );
+      if (!upstream.ok || !upstream.body) {
+        return c.text(`Upstream error (${upstream.status})`, upstream.status, {
+          "Access-Control-Allow-Origin": REQUESTING_ALLOWED_DOMAIN,
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Range",
+          "Access-Control-Expose-Headers":
+            "Accept-Ranges, Content-Length, Content-Range",
+          "Vary": "Origin",
+        });
+      }
+      const acceptRanges = upstream.headers.get("accept-ranges") ?? "bytes";
+      const contentLength = upstream.headers.get("content-length") ?? undefined;
+      const contentRange = upstream.headers.get("content-range") ?? undefined;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/pdf",
+        "Cache-Control": "public, max-age=86400",
+        "Accept-Ranges": acceptRanges,
+        "Access-Control-Allow-Origin": REQUESTING_ALLOWED_DOMAIN,
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Range",
+        "Access-Control-Expose-Headers":
+          "Accept-Ranges, Content-Length, Content-Range",
+        "Vary": "Origin",
+      };
+      if (contentLength) headers["Content-Length"] = contentLength;
+      if (contentRange) headers["Content-Range"] = contentRange;
+      return new Response(upstream.body, { status: upstream.status, headers });
+    } catch (e) {
+      console.error("[Requesting] PDF proxy error:", e);
+      return c.text("Failed to fetch PDF", 502, {
+        "Access-Control-Allow-Origin": REQUESTING_ALLOWED_DOMAIN,
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Range",
+        "Access-Control-Expose-Headers":
+          "Accept-Ranges, Content-Length, Content-Range",
+        "Vary": "Origin",
+      });
+    }
   });
 
   /**
