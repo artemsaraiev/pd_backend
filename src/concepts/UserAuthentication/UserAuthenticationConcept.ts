@@ -58,12 +58,16 @@ export default class UserAuthenticationConcept {
   async register(
     { username, password }: { username: string; password: string },
   ): Promise<{ user: User } | { error: string }> {
+    // Validate MIT email
+    if (!/@mit\.edu$/i.test(username)) {
+      return { error: "Only MIT email addresses (@mit.edu) are allowed" };
+    }
+
     // Check if a user with this username already exists.
-    // We also rely on the unique index in MongoDB, but this provides a cleaner error message.
     try {
       const existingUser = await this.users.findOne({ username });
       if (existingUser) {
-        return { error: "Username already exists" };
+        return { error: "Email already registered" };
       }
 
       const passwordHash = await hashPassword(password);
@@ -78,7 +82,7 @@ export default class UserAuthenticationConcept {
     } catch (e) {
       // Catch potential duplicate key error from the database index
       if (isMongoError(e) && e.code === 11000) {
-        return { error: "Username already exists" };
+        return { error: "Email already registered" };
       }
       // For other unexpected errors, re-throw or handle appropriately
       throw e;
@@ -97,23 +101,18 @@ export default class UserAuthenticationConcept {
   async login(
     { username, password }: { username: string; password: string },
   ): Promise<{ user: User } | { error: string }> {
-    // Temporary A4c policy: allow any password for MIT emails, auto-register if needed.
-    if (/@mit\.edu$/i.test(username)) {
-      const existing = await this.users.findOne({ username });
-      if (existing) return { user: existing._id };
-      const newUser: UserDoc = {
-        _id: freshID(),
-        username,
-        passwordHash: await hashPassword(password || "default"),
-      };
-      await this.users.insertOne(newUser);
-      return { user: newUser._id };
-    }
-    // Otherwise, standard password check
     const user = await this.users.findOne({ username });
-    if (!user) return { error: "Invalid username or password" };
+
+    // To prevent timing attacks and username enumeration, use a generic error message.
+    if (!user) {
+      return { error: "Invalid email or password" };
+    }
+
     const providedPasswordHash = await hashPassword(password);
-    if (user.passwordHash !== providedPasswordHash) return { error: "Invalid username or password" };
+    if (user.passwordHash !== providedPasswordHash) {
+      return { error: "Invalid email or password" };
+    }
+
     return { user: user._id };
   }
 

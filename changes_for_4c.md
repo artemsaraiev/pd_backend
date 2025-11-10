@@ -55,6 +55,31 @@ Reddit-style collapsible replies (latest):
   - Backend build passes (`deno task build`).
   - All concept and sync imports regenerate correctly.
 
+MIT Email Authentication (final updates):
+- `backend/src/concepts/UserAuthentication/UserAuthenticationConcept.ts`:
+  - Added MIT email validation (`@mit.edu` required) in `register()` method
+  - Proper password hashing with SHA-256 (production should use bcrypt/Argon2)
+  - Security: Generic error messages to prevent username enumeration
+  - Removed auto-registration from `login()` - users must register first
+- `backend/src/concepts/Requesting/passthrough.ts`:
+  - Blocked old `Session` concept endpoints (`/api/Session/login`, `/api/Session/logout`, `/api/Session/whoami`)
+  - Forces use of proper `UserAuthentication` + `Sessioning` flow through syncs
+  - Prevents accidental auto-registration bypass
+- `backend/src/syncs/a4.sync.ts`:
+  - Fixed `startThread` sync - removed problematic `where` clauses that caused "frames is not iterable" error
+  - Syncs now match based on parameter presence rather than runtime conditions
+- Database management:
+  - Added `backend/clear_db.ts` script for cleaning MongoDB collections
+  - Usage: `deno run --allow-net --allow-read --allow-env --allow-sys clear_db.ts`
+  - Useful for demo preparation and testing
+
+Deployment readiness:
+- All data persisted to MongoDB (threads, replies, users, sessions, anchors, papers)
+- MongoDB Atlas compatible
+- Environment variables configured via `.env`
+- CORS configured for cross-origin requests
+- Created `DEPLOYMENT.md` with complete deployment guide for Render
+
 Next steps:
 - Verify via `deno task import` then `deno task start`, click through UI and watch backend logs.
 - When verified, delete `backend/concepts/*` and the old `server.ts`.

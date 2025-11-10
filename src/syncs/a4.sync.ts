@@ -95,17 +95,27 @@ export const DiscussionOpenResponse: Sync = ({ request, result }) => ({
   then: actions([Requesting.respond, { request, result }]),
 });
 
-export const DiscussionStartThreadRequest: Sync = ({ request, pubId, author, body, anchorId }) => ({
-  when: actions([Requesting.request, { path: "/DiscussionPub/startThread", pubId, author, body, anchorId }, { request }]),
-  where: () => anchorId !== undefined,
+// startThread with anchorId and optional session
+export const DiscussionStartThreadRequest: Sync = ({ request, pubId, author, body, anchorId, session }) => ({
+  when: actions([Requesting.request, { path: "/DiscussionPub/startThread", pubId, author, body, anchorId, session }, { request }]),
   then: actions([DiscussionPub.startThread, { pubId, author, body, anchorId }]),
 });
 
-// Generic startThread: match both with or without extra fields (e.g., session)
-// Keep a single definition to avoid duplicate firings.
-export const DiscussionStartThreadGenericRequest: Sync = ({ request, pubId, author, body, anchorId }) => ({
+// startThread with anchorId but no session
+export const DiscussionStartThreadRequestNoSession: Sync = ({ request, pubId, author, body, anchorId }) => ({
+  when: actions([Requesting.request, { path: "/DiscussionPub/startThread", pubId, author, body, anchorId }, { request }]),
+  then: actions([DiscussionPub.startThread, { pubId, author, body, anchorId }]),
+});
+
+// Generic startThread: match without anchorId but with session
+export const DiscussionStartThreadGenericRequest: Sync = ({ request, pubId, author, body, session }) => ({
+  when: actions([Requesting.request, { path: "/DiscussionPub/startThread", pubId, author, body, session }, { request }]),
+  then: actions([DiscussionPub.startThread, { pubId, author, body }]),
+});
+
+// Generic startThread: match without anchorId and without session
+export const DiscussionStartThreadGenericRequestNoSession: Sync = ({ request, pubId, author, body }) => ({
   when: actions([Requesting.request, { path: "/DiscussionPub/startThread", pubId, author, body }, { request }]),
-  where: () => anchorId === undefined,
   then: actions([DiscussionPub.startThread, { pubId, author, body }]),
 });
 
@@ -117,7 +127,14 @@ export const DiscussionStartThreadResponse: Sync = ({ request, result }) => ({
   then: actions([Requesting.respond, { request, result }]),
 });
 
-export const DiscussionReplyRequest: Sync = ({ request, threadId, author, body }) => ({
+// Reply with session
+export const DiscussionReplyRequest: Sync = ({ request, threadId, author, body, session }) => ({
+  when: actions([Requesting.request, { path: "/DiscussionPub/reply", threadId, author, body, session }, { request }]),
+  then: actions([DiscussionPub.reply, { threadId, author, body }]),
+});
+
+// Reply without session
+export const DiscussionReplyRequestNoSession: Sync = ({ request, threadId, author, body }) => ({
   when: actions([Requesting.request, { path: "/DiscussionPub/reply", threadId, author, body }, { request }]),
   then: actions([DiscussionPub.reply, { threadId, author, body }]),
 });
@@ -131,8 +148,14 @@ export const DiscussionReplyResponse: Sync = ({ request, result }) => ({
   then: actions([Requesting.respond, { request, result }]),
 });
 
-// Support nested replies with optional parentId
-export const DiscussionReplyToRequest: Sync = ({ request, threadId, parentId, author, body }) => ({
+// Support nested replies with optional parentId and session
+export const DiscussionReplyToRequest: Sync = ({ request, threadId, parentId, author, body, session }) => ({
+  when: actions([Requesting.request, { path: "/DiscussionPub/replyTo", threadId, parentId, author, body, session }, { request }]),
+  then: actions([DiscussionPub.replyTo, { threadId, parentId, author, body }]),
+});
+
+// Support nested replies with optional parentId but no session
+export const DiscussionReplyToRequestNoSession: Sync = ({ request, threadId, parentId, author, body }) => ({
   when: actions([Requesting.request, { path: "/DiscussionPub/replyTo", threadId, parentId, author, body }, { request }]),
   then: actions([DiscussionPub.replyTo, { threadId, parentId, author, body }]),
 });

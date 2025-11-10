@@ -86,22 +86,39 @@ export const exclusions: Array<string> = [
   "/api/DiscussionPub/open",
   "/api/DiscussionPub/startThread",
   "/api/DiscussionPub/reply",
+  "/api/DiscussionPub/replyTo",
   "/api/DiscussionPub/getPubIdByPaper",
   "/api/DiscussionPub/listThreads",
   "/api/DiscussionPub/listReplies",
-  // Route replies-tree via Requesting so it’s consistent with listThreads/listReplies
   "/api/DiscussionPub/listRepliesTree",
+  "/api/DiscussionPub/initIndexes",
 
   // IdentityVerification
   "/api/IdentityVerification/addORCID",
   "/api/IdentityVerification/addBadge",
   "/api/IdentityVerification/get",
+  "/api/IdentityVerification/ensureDoc",
+
+  // LikertSurvey - internal actions (not public)
+  "/api/LikertSurvey/createSurvey",
+  "/api/LikertSurvey/addQuestion",
 
   // Auth flows - handled via syncs
   "/api/UserAuthentication/register",
+  "/api/UserAuthentication/login",
   "/api/login",
   "/api/logout",
   // Internal auth queries should not be public
   "/api/UserAuthentication/_getUserByUsername",
   "/api/UserAuthentication/_getUsername",
+  
+  // Sessioning - internal concept, use via syncs only
+  "/api/Sessioning/create",
+  "/api/Sessioning/delete",
+  "/api/Sessioning/_getUser",
+  
+  // Block old Session concept (use UserAuthentication + Sessioning instead)
+  "/api/Session/login",
+  "/api/Session/logout",
+  "/api/Session/whoami",
 ];
